@@ -12,6 +12,8 @@ import (
 	// "os"
 )
 
+var db = make(map[string]string)
+
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
@@ -37,13 +39,14 @@ func main() {
 
 
 func handleConnection(conn net.Conn) {
+	alpha, _ := regexp.Compile("^[a-zA-Z]")
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
 		if strings.ToUpper(scanner.Text()) == "PING" {
 			conn.Write([]byte("+PONG\r\n"))
 		} else if strings.ToUpper(scanner.Text()) == "ECHO" {
-			alpha, _ := regexp.Compile("^[a-zA-Z]")
+			
 			for scanner.Scan() {
 				if alpha.MatchString(scanner.Text()) {
 					conn.Write([]byte("+" + scanner.Text() + "\r\n"))
@@ -52,6 +55,28 @@ func handleConnection(conn net.Conn) {
 					fmt.Println(scanner.Text())
 				}
 			}
+		} else if strings.ToUpper(scanner.Text()) == "SET" {
+			scanner.Scan()
+			// skip $ length
+			scanner.Scan()
+			key := scanner.Text()
+			scanner.Scan()
+			// skip $ length
+			scanner.Scan()
+			value := scanner.Text()
+			db[key] = value
+			conn.Write([]byte("+OK\r\n"))
+		} else if strings.ToUpper(scanner.Text()) == "GET" {
+			scanner.Scan()
+			// skip $ length
+			scanner.Scan()
+			key := scanner.Text()
+			if val, ok := db[key]; ok {
+				conn.Write([]byte("$" + fmt.Sprint(len(val)) + "\r\n" + val + "\r\n"))
+			} else {
+				conn.Write([]byte("$-1\r\n"))
+			}
 		}
+
 	}
 }
