@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 	// Uncomment this block to pass the first stage
 	// "net"
@@ -41,6 +42,16 @@ func handleConnection(conn net.Conn) {
 		fmt.Println(scanner.Text())
 		if strings.ToUpper(scanner.Text()) == "PING" {
 			conn.Write([]byte("+PONG\r\n"))
+		} else if strings.ToUpper(scanner.Text()) == "ECHO" {
+			alpha, _ := regexp.Compile("^[a-zA-Z]")
+			for scanner.Scan() {
+				if alpha.MatchString(scanner.Text()) {
+					conn.Write([]byte("+" + scanner.Text() + "\r\n"))
+					break
+				} else {
+					fmt.Println(scanner.Text())
+				}
+			}
 		}
 	}
 }
