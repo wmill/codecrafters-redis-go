@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 	// Uncomment this block to pass the first stage
 	// "net"
 	// "os"
@@ -80,6 +82,23 @@ func newHandleConnection(conn net.Conn) {
 			db.Lock()
 			db.m[command.args[0]] = command.args[1]
 			db.Unlock()
+			if (len(command.args) > 2) {
+				var timeout time.Duration
+				baseTimeout, _ := strconv.Atoi(command.args[3])
+				if (strings.ToUpper(command.args[2]) == "PX") {
+					timeout = time.Duration(baseTimeout) * time.Millisecond
+				} else if (strings.ToUpper(command.args[2]) == "EX") {
+					timeout = time.Duration(baseTimeout) * time.Second
+				}
+				timer := time.NewTimer(timeout)
+
+				go func()  {
+					<-timer.C
+					db.Lock()
+					delete(db.m, command.args[0])
+					db.Unlock()
+				}()
+			}
 			conn.Write([]byte("+OK\r\n"))
 		case "GET":
 			db.RLock()
