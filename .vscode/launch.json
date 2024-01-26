@@ -17,7 +17,7 @@
       "request": "launch",
       "mode": "auto",
       "program": "app",
-      "args": ["download_piece","-o","/tmp/test-piece-0","sample.torrent","2"],
+      "args": ["--dir", "/tmp/redis-files", "--dbfilename", "dump.rdb"],
       "cwd": "${workspaceFolder}"
     }
   ]
